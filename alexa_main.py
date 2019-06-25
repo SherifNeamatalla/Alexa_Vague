@@ -5,6 +5,9 @@ import requests
 import time
 import unidecode
 import random
+import time
+import pika
+
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -33,12 +36,16 @@ def get_random_hello_message():
 @ask.intent("more", mapping={"value": "attribute"})
 def get_more(value):
     #If the laptop attributes are already set from front end.
-    if len(laptop_dict.keys()) > 0 :
+    print(laptop_dict)
+    if len(laptop_dict.keys()) > 0  :
+        print(value)
 
         #TODO : refine the name of attributes to match backend. IMPORTANT!!!!!!!
 
         laptop_dict.update({"intent":"more"})
         laptop_dict.update({"intentVariable":value})
+
+        query_result.clear()
 
         query_result.append(get_query_result())
         #In case the result has any loose shit in it.
@@ -55,15 +62,14 @@ def get_more(value):
 def get_less(value):
 
     #If the laptop attributes are already set from front end.
-    if len(laptop_dict.keys()) > 0 :
-
+    if len(laptop_dict.keys()) > 0 and "intent" not in laptop_dict.keys():
         #TODO : refine the name of attributes to match backend. IMPORTANT!!!!!!!
-
         laptop_dict.update({"intent":"less"})
         laptop_dict.update({"intentVariable":value})
 
+        query_result.clear()
+
         query_result.append(get_query_result())
-        print(query_result)
         #In case the result has any loose shit in it.
         try :
             message = "I found this laptop that I think you will like, its "+laptop_dict["intentVariable"]+" is "+str(query_result[0][0][laptop_dict["intentVariable"]])
@@ -91,24 +97,27 @@ def set_laptop_attributes():
 
     data = request.get_json()
 
+    laptop_dict.clear()
+
     laptop_dict.update(data)
 
     return jsonify(laptop_dict)
 
 
-@app.route('/alexa/getQuery',methods = ['POST'])
+@app.route('/alexa/getQuery',methods = ['GET'])
 def return_query_to_frontend():
     #The query has already been processed.
-    if len(query_result) > 0 :
+    if len(query_result) > 0  and len(query_result[0]) >0:
     #print(response)
-        json_response = jsonify(query_result)
+        json_response = jsonify(query_result[0])
         # reset the query_result variable.
-        query_result.clear()
+        #query_result.clear()
 
         laptop_dict.clear()
-    else :#Fail, result is not here yet, keep listening.
+    else :
+        #Fail, result is not here yet, keep listening.
         json_response = ""
-
+    print(json_response)
     return json_response
 
 def get_query_result():
@@ -121,5 +130,23 @@ def get_query_result():
 
     return response
 
+def send_rabbitMQ_message():
+    #Create a new instance of the Connection object
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+
+    #Create a new channel with the next available channel number or pass in a channel number to use
+
+    channel = connection.channel()
+
+    #Declare queue, create if needed. This method creates or checks a queue. When creating a new queue the client can specify various properties that control the durability of the queue and its contents, and the level of sharing for the queue.
+
+    channel.queue_declare(queue='alexa')
+
+    channel.basic_publish(exchange='', routing_key='', body='OK!')
+
+
+    connection.close()
+
 if __name__ == "__main__":
-     app.run(debug=True)
+     app.run(port=5004,debug=True)
