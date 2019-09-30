@@ -49,7 +49,6 @@ def get_more(value):
 
         try :
             message = get_random_result_success_message(intent_variable,query_result)
-            print("I found this laptop that I think you will like, its "+intent_variable+" is "+str(query_result[0][intent_variable]))
             send_query_result_to_frontend(query_result)
         except :
             message = get_random_fail_message()
@@ -63,6 +62,9 @@ def get_less(value):
 
     value = get_camelCase_attribute(value)
 
+    print(value);
+    
+
     #If the laptop attributes are already set from front end.
     if len(laptop_dict.keys()) > 0 :
         #TODO : refine the name of attributes to match backend. IMPORTANT!!!!!!!
@@ -72,8 +74,6 @@ def get_less(value):
         intent_variable = laptop_dict["intentVariable"]
 
         query_result = get_query_result_from_backend()
-        #In case the result has any loose shit in it.
-        print(query_result)
         try :
             message = get_random_result_success_message(intent_variable,query_result)
             send_query_result_to_frontend(query_result)
@@ -110,6 +110,8 @@ def get_query_result_from_backend():
 
 
     response = req.json()
+
+    print("Hello",response)
 
 
     laptop_dict.clear()
