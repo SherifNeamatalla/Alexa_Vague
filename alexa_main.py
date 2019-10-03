@@ -17,7 +17,11 @@ socketio = SocketIO(app)
 laptop_dict = dict()
 backend_url = "http://localhost:5001/api/search/alexa"
 
-attributes_list = ["processorCount","processorSpeed","displayResolutionSize","screenSize","hdd","ram","screenSize"]
+# This is taken from the synonyms stated in the attribute area in alexa model
+attributes_dict = {
+"price" : ['price'],"processorCount" :['processor count','processorcount','cores','processor cores'],'ram':['ram'],'processorSpeed':['processorspeed','processor speed','processor','speed'],
+'displayResolutionSize': ['resolution'], 'screenSize' : ['screen','display','size','screen size'],'hdd':['drive','hard drive','memory']
+}
 
 
 @socketio.on('connect')
@@ -37,7 +41,6 @@ def get_more(value):
 
     value = get_camelCase_attribute(value)
     #If the laptop attributes are already set from front end.
-    print(value)
 
     if len(laptop_dict.keys()) > 0  :
         laptop_dict.update({"intent":"more"})
@@ -61,9 +64,6 @@ def get_more(value):
 def get_less(value):
 
     value = get_camelCase_attribute(value)
-
-    print(value);
-    
 
     #If the laptop attributes are already set from front end.
     if len(laptop_dict.keys()) > 0 :
@@ -111,9 +111,6 @@ def get_query_result_from_backend():
 
     response = req.json()
 
-    print("Hello",response)
-
-
     laptop_dict.clear()
 
     return response
@@ -121,6 +118,8 @@ def get_query_result_from_backend():
 def send_query_result_to_frontend(query_result):
     #TODO: send query_result
     socketio.emit('result', query_result)
+    laptop_dict.clear()
+
     pass
 
 def get_random_hello_message():
@@ -163,10 +162,10 @@ def get_random_result_success_message(intent_variable,query_result):
     message = "I found this laptop that I think you will like, its "+intent_variable+" is "+str(query_result[0][intent_variable])
 
     #To feel more human like.
-    messages = ["I found a laptop that I think you will like"
-    ,"How about this laptop",
-    "Here is the laptop I found for you"
-    ,"Christmas is here, I just found the perfect laptop for you"]
+    messages = ["I found a laptop that I think you will like, "
+    ,"How about this laptop, ",
+    "Here is the laptop I found for you, "
+    ,"Christmas is here, I just found the perfect laptop for you, "]
 
     random_response = random.sample(messages,1)
 
@@ -175,13 +174,13 @@ def get_random_result_success_message(intent_variable,query_result):
 
     message = str(random_response[0])+" it is "+brand_name+" which costs "+price+"euros , also its "+intent_variable+" is "+str(query_result[0][intent_variable])
 
-    print(message)
 
     return message
 
 def get_camelCase_attribute(attribute_name):
-    for attribute in attributes_list :
-        if attribute_name.lower() == attribute.lower():
+    print(attribute_name)
+    for attribute in attributes_dict :
+        if attribute_name.lower() in attributes_dict[attribute]:
             return attribute
 
 
